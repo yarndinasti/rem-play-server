@@ -1,0 +1,21 @@
+{
+  "name": "rem-play-server",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.0.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.3",
+    "google-auth-library": "^7.14.1",
+    "googleapis": "^99.0.0",
+    "rss-converter": "^1.1.6"
+  }
+}
