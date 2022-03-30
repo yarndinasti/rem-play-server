@@ -1,5 +1,7 @@
 import rss from "rss-converter"
+import checkNotification from "./check-notification.js"
 import chalk from "chalk"
+import moment from "moment"
 
 import fs from "fs"
 import path from "path"
@@ -23,16 +25,22 @@ export default async () => {
     fs.mkdirSync(path.join(__rootname, "liver"))
   }
 
-  console.log(chalk.blue.inverse.bold(" Get data... "))
+  console.log(
+    chalk.yellow.inverse.bold(` ${new Date().toLocaleString()} `) +
+      chalk.blue.inverse.bold(" Get data... ")
+  )
   await fetchVideoData()
 
   setInterval(async () => {
-    console.log(chalk.blue.inverse.bold(" Refresh data... "))
-    fetchVideoData()
+    console.log(
+      chalk.yellow.inverse.bold(` ${new Date().toLocaleString()} `) +
+        chalk.blue.inverse.bold(" Refresh data... ")
+    )
+    fetchVideoData(true)
   }, 1000 * 60)
 }
 
-async function fetchVideoData() {
+async function fetchVideoData(notif = false) {
   // check config.json
   const file_config = path.join(__rootname, "config.json")
 
@@ -87,7 +95,7 @@ async function fetchVideoData() {
     }
 
     // get json from liver folder
-    const db = JSON.parse(fs.readFileSync(liver_db))
+    let db = JSON.parse(fs.readFileSync(liver_db))
 
     for (const item of feed) {
       const videoInDB = !!db.find((video) => video.id === item.id)
@@ -127,14 +135,30 @@ async function fetchVideoData() {
       const matches = reptms.exec(
         data_video.data.items[0].contentDetails.duration
       )
-      const hours = parseInt(matches[1]) || 0
-      const minutes = parseInt(matches[2]) || 0
-      const seconds = parseInt(matches[3]) || 0
-      const totalseconds = hours * 3600 + minutes * 60 + seconds
+      let totalseconds
+
+      if (matches === null) totalseconds = 0
+      else {
+        const hours = parseInt(matches[1] ?? 0)
+        const minutes = parseInt(matches[2] ?? 0)
+        const seconds = parseInt(matches[3] ?? 0)
+        totalseconds = hours * 3600 + minutes * 60 + seconds
+      }
 
       const thumbnail = data_video.data.items[0].snippet.thumbnails.standard
         ? data_video.data.items[0].snippet.thumbnails.standard.url
         : `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
+
+      if (
+        (!videoInDB && live_status === "live") ||
+        (upcomingPast && live_status === "live")
+      ) {
+        console.log("live")
+      } else if (!videoInDB && live_status === "upcoming") {
+        console.log("upcoming")
+      } else if (!videoInDB && live_status === "past" && notif) {
+        console.log("new video")
+      }
 
       if (!videoInDB) {
         db.push({
@@ -146,22 +170,41 @@ async function fetchVideoData() {
           ...live,
         })
 
-        console.log(
-          chalk.bgBlue.white.bold(` New video ${liver.emoji} `) +
-            " " +
-            chalk.green(item.title)
-        )
+        if (live_status === "upcoming") {
+          // get time remaining from live.start_time
+          const time_remaining = moment(live.live.start_time).fromNow()
+
+          console.log(
+            chalk.bgBlue.white.bold(
+              ` Upcoming in ${time_remaining} ${liver.emoji} `
+            ) +
+              " " +
+              chalk.green(item.title)
+          )
+        } else if (live_status === "live") {
+          console.log(
+            chalk.bgBlue.white.bold(` Is Live! ${liver.emoji} `) +
+              " " +
+              chalk.green(item.title)
+          )
+        } else {
+          console.log(
+            chalk.bgBlue.white.bold(` New video ${liver.emoji} `) +
+              " " +
+              chalk.green(item.title)
+          )
+        }
       } else {
         db = db.map((video) => {
-          if (video.id === item.id) {
+          if (video.id === item.id && video.live?.live_status !== live_status) {
             // Check if video is live
-            if (upcomingPast) {
+            if (upcomingPast && live_status === "live") {
               console.log(
                 chalk.bgRed.white.bold(` Is Live! ${liver.emoji} `) +
                   " " +
                   chalk.green(item.title)
               )
-            } else if (isLive) {
+            } else if (isLive && live_status === "past") {
               console.log(
                 chalk.bgBlue.white.bold(` Live End ${liver.emoji} `) +
                   " " +

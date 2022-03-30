@@ -16,6 +16,7 @@
     "express": "^4.17.3",
     "google-auth-library": "^7.14.1",
     "googleapis": "^99.0.0",
+    "moment": "^2.29.1",
     "rss-converter": "^1.1.6"
   }
 }

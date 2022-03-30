@@ -24,15 +24,26 @@ const server = () => {
 
     const livers = files
       .map((file) => {
-        const videos = JSON.parse(
-          fs.readFileSync(path.join(liver_folder, file))
-        )
+        let videos = JSON.parse(fs.readFileSync(path.join(liver_folder, file)))
 
-        for (const video of videos) {
-          video.liver = config.liver.find(
+        videos = videos.map((video) => {
+          const member = config.liver.find(
             (liver) => liver.slug === file.replace(".json", "")
           )
-        }
+
+          return {
+            id: video.id,
+            title: video.title,
+            published: video.published,
+            thumbnail: video.thumbnail,
+            live: video.live,
+            member: {
+              slug: member.slug,
+              name: member.name,
+              gen: member.gen,
+            },
+          }
+        })
 
         return videos
       })
