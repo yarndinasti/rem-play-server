@@ -4,6 +4,7 @@ import express from "express"
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
+import "dotenv/config"
 
 const __filename = fileURLToPath(import.meta.url)
 const __rootname = path.dirname(__filename) + "/../"
@@ -147,7 +148,7 @@ const server = () => {
     })
   })
 
-  app.listen(3001, () => {
+  app.listen(process.env.PORT, () => {
     console.log(chalk.green("Server is running on port 3001"))
   })
 }
