@@ -145,15 +145,15 @@ async function fetchVideoData(notif = false) {
         totalseconds = hours * 3600 + minutes * 60 + seconds
       }
 
-      const thumbnail = data_video.data.items[0].snippet.thumbnails.standard
-        ? data_video.data.items[0].snippet.thumbnails.standard.url
-        : `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
+      const thumbnail = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
+      const miniThumbnail = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`
 
       const result = {
         id: item.id,
         title: item.title,
         published: item.published,
         thumbnail,
+        mini_thumbnail: miniThumbnail,
         duration: totalseconds,
         ...live,
       }

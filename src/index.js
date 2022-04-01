@@ -39,6 +39,7 @@ const server = () => {
             title: video.title,
             published: video.published,
             thumbnail: video.thumbnail,
+            mini_thumbnail: video.mini_thumbnail,
             live: video.live,
             member: {
               slug: member.slug,
@@ -111,6 +112,7 @@ const server = () => {
             title: video.title,
             published: video.published,
             thumbnail: video.thumbnail,
+            mini_thumbnail: video.mini_thumbnail,
             live: video.live,
             member: {
               slug: member.slug,
