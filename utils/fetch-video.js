@@ -98,11 +98,11 @@ async function fetchVideoData(notif = false) {
     let db = JSON.parse(fs.readFileSync(liver_db))
 
     for (const item of feed) {
-      const videoInDB = !!db.find((video) => video.id === item.id)
+      const videoInDB = db.find((video) => video.id === item.id)
       const upcomingPast =
-        item.live?.live_status === "upcoming" &&
-        new Date().getTime() > item.live.start_time
-      const isLive = item.live?.live_status === "live"
+        videoInDB?.live?.live_status === "upcoming" &&
+        new Date().getTime() > videoInDB?.live?.start_time
+      const isLive = videoInDB?.live?.live_status === "live"
 
       if (videoInDB && !upcomingPast && !isLive) continue
 
@@ -149,47 +149,50 @@ async function fetchVideoData(notif = false) {
         ? data_video.data.items[0].snippet.thumbnails.standard.url
         : `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
 
+      const result = {
+        id: item.id,
+        title: item.title,
+        published: item.published,
+        thumbnail,
+        duration: totalseconds,
+        ...live,
+      }
+
       if (
         (!videoInDB && live_status === "live") ||
         (upcomingPast && live_status === "live")
       ) {
+        checkNotification("live", liver, result)
         console.log("live")
       } else if (!videoInDB && live_status === "upcoming") {
+        checkNotification("upcoming", liver, result)
         console.log("upcoming")
       } else if (!videoInDB && live_status === "past" && notif) {
+        checkNotification("video", liver, result)
         console.log("new video")
       }
 
       if (!videoInDB) {
-        db.push({
-          id: item.id,
-          title: item.title,
-          published: item.published,
-          thumbnail,
-          duration: totalseconds,
-          ...live,
-        })
+        db.push(result)
 
         if (live_status === "upcoming") {
           // get time remaining from live.start_time
           const time_remaining = moment(live.live.start_time).fromNow()
 
           console.log(
-            chalk.bgBlue.white.bold(
-              ` Upcoming in ${time_remaining} ${liver.emoji} `
-            ) +
+            chalk.blue.bold(` Upcoming in ${time_remaining} ${liver.emoji} `) +
               " " +
               chalk.green(item.title)
           )
         } else if (live_status === "live") {
           console.log(
-            chalk.bgBlue.white.bold(` Is Live! ${liver.emoji} `) +
+            chalk.red.bold(` 🔴 Is Live! ${liver.emoji} `) +
               " " +
               chalk.green(item.title)
           )
         } else {
           console.log(
-            chalk.bgBlue.white.bold(` New video ${liver.emoji} `) +
+            chalk.blue.bold(` New video ${liver.emoji} `) +
               " " +
               chalk.green(item.title)
           )
@@ -200,25 +203,18 @@ async function fetchVideoData(notif = false) {
             // Check if video is live
             if (upcomingPast && live_status === "live") {
               console.log(
-                chalk.bgRed.white.bold(` Is Live! ${liver.emoji} `) +
+                chalk.red.bold(` 🔴 Is Live! ${liver.emoji} `) +
                   " " +
                   chalk.green(item.title)
               )
             } else if (isLive && live_status === "past") {
               console.log(
-                chalk.bgBlue.white.bold(` Live End ${liver.emoji} `) +
+                chalk.blue.bold(` Live End ${liver.emoji} `) +
                   " " +
                   chalk.green(item.title)
               )
             }
-            return {
-              id: item.id,
-              title: item.title,
-              published: item.published,
-              thumbnail,
-              duration: totalseconds,
-              ...live,
-            }
+            return result
           }
           return video
         })
