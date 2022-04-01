@@ -52,8 +52,18 @@ const server = () => {
       })
       .reduce((acc, cur) => [...acc, ...cur], [])
 
-    // sorting livers for latest video (lagest published)
-    livers.sort((a, b) => b.published - a.published)
+    // sorting livers for latest video (lagest live?.start_time first when exist, but don't have live?.start_time, sort by published)
+    livers.sort((a, b) => {
+      if (a.live?.start_time && b.live?.start_time) {
+        return b.live.start_time - a.live.start_time
+      } else if (a.live?.start_time) {
+        return -1
+      } else if (b.live?.start_time) {
+        return 1
+      } else {
+        return b.published - a.published
+      }
+    })
 
     // limit livers to 20 video
     livers.splice(25)
@@ -115,7 +125,17 @@ const server = () => {
       .reduce((acc, cur) => [...acc, ...cur], [])
 
     // sorting livers for latest video (lagest published)
-    livers.sort((a, b) => b.published - a.published)
+    livers.sort((a, b) => {
+      if (a.live?.start_time && b.live?.start_time) {
+        return b.live.start_time - a.live.start_time
+      } else if (a.live?.start_time) {
+        return -1
+      } else if (b.live?.start_time) {
+        return 1
+      } else {
+        return b.published - a.published
+      }
+    })
 
     // limit livers to 20 video
     livers.splice(25)
