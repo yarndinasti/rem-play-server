@@ -82,7 +82,7 @@ const server = () => {
     })
 
     const result = {
-      slideshow,
+      slideshow: tab,
       video_list: livers,
     }
 
