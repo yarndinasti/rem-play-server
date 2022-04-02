@@ -82,8 +82,8 @@ const server = () => {
     })
 
     const result = {
-      tab,
-      list: livers,
+      slideshow,
+      video_list: livers,
     }
 
     res.status(200).json(result)
