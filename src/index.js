@@ -30,10 +30,18 @@ const server = () => {
         const file_path = path.join(liver_folder, file)
         const file_data = JSON.parse(fs.readFileSync(file_path))
 
-        file_data.map(
-          (video) =>
-            (video.from = config.members.find((m) => m.slug === video.from))
-        )
+        file_data.map((video) => {
+          video.from = config.members.find((m) => m.slug === video.from)
+
+          video.from = {
+            name: video.from.name,
+            slug: video.from.slug,
+            channel_id: video.from.id,
+          }
+
+          return video
+        })
+
         return file_data
       })
       .reduce((acc, cur) => [...acc, ...cur], [])
@@ -90,7 +98,15 @@ const server = () => {
 
         file_data.map(
           (video) =>
-            (video.from = config.members.find((m) => m.slug === video.from))
+            (video.from = config.members
+              .find((m) => m.slug === video.from)
+              .map((m) => {
+                return {
+                  name: m.name,
+                  slug: m.slug,
+                  channel_id: m.id,
+                }
+              }))
         )
         return file_data
       })
