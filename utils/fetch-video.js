@@ -97,6 +97,12 @@ async function fetchVideoData(notif = false) {
     // get json from liver folder
     let db = JSON.parse(fs.readFileSync(liver_db))
 
+    // Delete data in db when deleted video
+    for (const item of db) {
+      if (!feed.find((video) => video.id === item.id))
+        db.splice(db.indexOf(item), 1)
+    }
+
     for (const item of feed) {
       const videoInDB = db.find((video) => video.id === item.id)
       const upcomingPast =
@@ -224,8 +230,8 @@ async function fetchVideoData(notif = false) {
     // sorting db for latest video (lagest published)
     db.sort((a, b) => b.published - a.published)
 
-    // limit db to 20 video
-    db.splice(20)
+    // limit db to 15 video
+    db.splice(15)
 
     // write db to json
     fs.writeFileSync(liver_db, JSON.stringify(db))
