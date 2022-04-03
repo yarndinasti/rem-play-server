@@ -95,13 +95,10 @@ async function fetchVideoData(notif = false) {
     }
 
     // get json from liver folder
-    let db = JSON.parse(fs.readFileSync(liver_db))
+    const db = JSON.parse(fs.readFileSync(liver_db))
 
     // Delete data in db when deleted video
-    for (const item of db) {
-      if (!feed.find((video) => video.id === item.id))
-        db.splice(db.indexOf(item), 1)
-    }
+    let newDb = []
 
     for (const item of feed) {
       const videoInDB = db.find((video) => video.id === item.id)
@@ -178,9 +175,8 @@ async function fetchVideoData(notif = false) {
         console.log("new video")
       }
 
+      newDb.push(result)
       if (!videoInDB) {
-        db.push(result)
-
         if (live_status === "upcoming") {
           // get time remaining from live.start_time
           const time_remaining = moment(live.live.start_time).fromNow()
@@ -204,36 +200,26 @@ async function fetchVideoData(notif = false) {
           )
         }
       } else {
-        db = db.map((video) => {
-          if (video.id === item.id && video.live?.live_status !== live_status) {
-            // Check if video is live
-            if (upcomingPast && live_status === "live") {
-              console.log(
-                chalk.red.bold(` 🔴 Is Live! ${liver.emoji} `) +
-                  " " +
-                  chalk.green(item.title)
-              )
-            } else if (isLive && live_status === "past") {
-              console.log(
-                chalk.blue.bold(` Live End ${liver.emoji} `) +
-                  " " +
-                  chalk.green(item.title)
-              )
-            }
-            return result
-          }
-          return video
-        })
+        if (upcomingPast && live_status === "live") {
+          console.log(
+            chalk.red.bold(` 🔴 Is Live! ${liver.emoji} `) +
+              " " +
+              chalk.green(item.title)
+          )
+        } else if (isLive && live_status === "past") {
+          console.log(
+            chalk.blue.bold(` Live End ${liver.emoji} `) +
+              " " +
+              chalk.green(item.title)
+          )
+        }
       }
     }
 
     // sorting db for latest video (lagest published)
-    db.sort((a, b) => b.published - a.published)
-
-    // limit db to 15 video
-    db.splice(15)
+    newDb.sort((a, b) => b.published - a.published)
 
     // write db to json
-    fs.writeFileSync(liver_db, JSON.stringify(db))
+    fs.writeFileSync(liver_db, JSON.stringify(newDb))
   }
 }
