@@ -107,75 +107,74 @@ async function fetchVideoData(notif = false) {
         new Date().getTime() > videoInDB?.live?.start_time
       const isLive = videoInDB?.live?.live_status === "live"
 
-      if (videoInDB && !upcomingPast && !isLive) continue
+      if (!videoInDB || upcomingPast || isLive) {
+        const data_video = await youtube.videos.list({
+          id: item.id,
+          part: "statistics,snippet,liveStreamingDetails,contentDetails",
+          fields:
+            "items(snippet(publishedAt,title,description,thumbnails(standard),channelTitle,liveBroadcastContent),liveStreamingDetails(scheduledStartTime,concurrentViewers,actualEndTime),statistics(viewCount),contentDetails(duration))",
+        })
 
-      const data_video = await youtube.videos.list({
-        id: item.id,
-        part: "statistics,snippet,liveStreamingDetails,contentDetails",
-        fields:
-          "items(snippet(publishedAt,title,description,thumbnails(standard),channelTitle,liveBroadcastContent),liveStreamingDetails(scheduledStartTime,concurrentViewers,actualEndTime),statistics(viewCount),contentDetails(duration))",
-      })
+        // check is live
+        const live_status =
+          data_video.data.items[0].snippet.liveBroadcastContent !== "none"
+            ? data_video.data.items[0].snippet.liveBroadcastContent
+            : "past"
 
-      // check is live
-      const live_status =
-        data_video.data.items[0].snippet.liveBroadcastContent !== "none"
-          ? data_video.data.items[0].snippet.liveBroadcastContent
-          : "past"
+        // when liveStreamingDetails, add object live
+        const live = data_video.data.items[0].liveStreamingDetails
+          ? {
+              live: {
+                live_status,
+                start_time: new Date(
+                  data_video.data.items[0].liveStreamingDetails.scheduledStartTime
+                ).getTime(),
+              },
+            }
+          : {}
 
-      // when liveStreamingDetails, add object live
-      const live = data_video.data.items[0].liveStreamingDetails
-        ? {
-            live: {
-              live_status,
-              start_time: new Date(
-                data_video.data.items[0].liveStreamingDetails.scheduledStartTime
-              ).getTime(),
-            },
-          }
-        : {}
+        const reptms = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/
+        const matches = reptms.exec(
+          data_video.data.items[0].contentDetails.duration
+        )
+        let totalseconds
 
-      const reptms = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/
-      const matches = reptms.exec(
-        data_video.data.items[0].contentDetails.duration
-      )
-      let totalseconds
+        if (matches === null) totalseconds = 0
+        else {
+          const hours = parseInt(matches[1] ?? 0)
+          const minutes = parseInt(matches[2] ?? 0)
+          const seconds = parseInt(matches[3] ?? 0)
+          totalseconds = hours * 3600 + minutes * 60 + seconds
+        }
 
-      if (matches === null) totalseconds = 0
-      else {
-        const hours = parseInt(matches[1] ?? 0)
-        const minutes = parseInt(matches[2] ?? 0)
-        const seconds = parseInt(matches[3] ?? 0)
-        totalseconds = hours * 3600 + minutes * 60 + seconds
+        const thumbnail = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
+        const miniThumbnail = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`
+
+        const result = {
+          id: item.id,
+          title: item.title,
+          published: item.published,
+          thumbnail,
+          mini_thumbnail: miniThumbnail,
+          duration: totalseconds,
+          ...live,
+        }
+
+        if (
+          (!videoInDB && live_status === "live") ||
+          (upcomingPast && live_status === "live")
+        ) {
+          checkNotification("live", liver, result)
+        } else if (!videoInDB && live_status === "upcoming") {
+          checkNotification("upcoming", liver, result)
+        } else if (!videoInDB && live_status === "past" && notif) {
+          checkNotification("video", liver, result)
+        }
+        newDb.push(result)
+      } else {
+        newDb.push(videoInDB)
       }
 
-      const thumbnail = `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
-      const miniThumbnail = `https://i.ytimg.com/vi/${item.id}/mqdefault.jpg`
-
-      const result = {
-        id: item.id,
-        title: item.title,
-        published: item.published,
-        thumbnail,
-        mini_thumbnail: miniThumbnail,
-        duration: totalseconds,
-        ...live,
-      }
-
-      if (
-        (!videoInDB && live_status === "live") ||
-        (upcomingPast && live_status === "live")
-      ) {
-        checkNotification("live", liver, result)
-        console.log("live")
-      } else if (!videoInDB && live_status === "upcoming") {
-        checkNotification("upcoming", liver, result)
-        console.log("upcoming")
-      } else if (!videoInDB && live_status === "past" && notif) {
-        checkNotification("video", liver, result)
-        console.log("new video")
-      }
-
-      newDb.push(result)
       if (!videoInDB) {
         if (live_status === "upcoming") {
           // get time remaining from live.start_time
