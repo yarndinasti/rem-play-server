@@ -19,159 +19,131 @@ const server = () => {
   })
 
   app.get("/on-app", (req, res) => {
-    const liver_folder = path.join(__rootname, "liver")
+    const liver_folder = path.join(__rootname, "members")
     const config = JSON.parse(
       fs.readFileSync(path.join(__rootname, "config.json"))
     )
     const files = fs.readdirSync(liver_folder)
 
-    const livers = files
+    const videos = files
       .map((file) => {
-        let videos = JSON.parse(fs.readFileSync(path.join(liver_folder, file)))
+        const file_path = path.join(liver_folder, file)
+        const file_data = JSON.parse(fs.readFileSync(file_path))
 
-        videos = videos.map((video) => {
-          const member = config.liver.find(
-            (liver) => liver.slug === file.replace(".json", "")
-          )
-
-          return {
-            id: video.id,
-            title: video.title,
-            published: video.published,
-            thumbnail: video.thumbnail,
-            mini_thumbnail: video.mini_thumbnail,
-            live: video.live,
-            member: {
-              slug: member.slug,
-              name: member.name,
-              gen: member.gen,
-            },
-          }
-        })
-
-        return videos
+        file_data.map(
+          (video) =>
+            (video.from = config.members.find((m) => m.slug === video.from))
+        )
+        return file_data
       })
       .reduce((acc, cur) => [...acc, ...cur], [])
 
-    // sorting livers for latest video (lagest live?.start_time first when exist, but don't have live?.start_time, sort by published)
-    livers.sort((a, b) => {
-      if (a.live?.start_time && b.live?.start_time) {
-        return b.live.start_time - a.live.start_time
-      } else if (a.live?.start_time) {
+    videos.sort((a, b) => {
+      if (a.live?.start_stream && b.live?.start_stream) {
+        return b.live.start_stream - a.live.start_stream
+      } else if (a.live?.start_stream) {
         return -1
-      } else if (b.live?.start_time) {
+      } else if (b.live?.start_stream) {
         return 1
       } else {
         return b.published - a.published
       }
     })
 
-    // limit livers to 20 video
-    livers.splice(25)
+    videos.splice(25)
 
-    const tab = config.liver.map((liver) => {
-      let videos = JSON.parse(
-        fs.readFileSync(path.join(liver_folder, liver.slug + ".json"))
-      )[0]
+    const slideshow = config.members
+      .map((member) => member.slug + ".json")
+      .map((file) => {
+        const file_path = path.join(liver_folder, file)
+        const file_data = JSON.parse(fs.readFileSync(file_path))
+        const member = config.members.find(
+          (m) => m.slug === file.replace(".json", "")
+        )
 
-      return {
-        thumbnail: videos.thumbnail,
-        title: `${liver.emoji == "" ? "" : `${liver.emoji} `}` + videos.title,
-        url: `https://www.youtube.com/watch?v=${videos.id}`,
-      }
+        return {
+          title:
+            (member.emoji === "" ? "" : `${member.emoji} `) +
+            file_data[0].title,
+          url: `https://www.youtube.com/watch?v=${file_data[0].id}`,
+          thumbnail: file_data[0].thumbnail.normal,
+        }
+      })
+
+    res.status(200).json({
+      slideshow,
+      videos,
     })
-
-    const result = {
-      slideshow: tab,
-      video_list: livers,
-    }
-
-    res.status(200).json(result)
   })
 
   app.get("/liver", (req, res) => {
-    // get all json file in liver folder
-
-    const liver_folder = path.join(__rootname, "liver")
+    const liver_folder = path.join(__rootname, "members")
     const config = JSON.parse(
       fs.readFileSync(path.join(__rootname, "config.json"))
     )
     const files = fs.readdirSync(liver_folder)
 
-    const livers = files
+    const videos = files
       .map((file) => {
-        let videos = JSON.parse(fs.readFileSync(path.join(liver_folder, file)))
+        const file_path = path.join(liver_folder, file)
+        const file_data = JSON.parse(fs.readFileSync(file_path))
 
-        videos = videos.map((video) => {
-          const member = config.liver.find(
-            (liver) => liver.slug === file.replace(".json", "")
-          )
-
-          return {
-            id: video.id,
-            title: video.title,
-            published: video.published,
-            thumbnail: video.thumbnail,
-            mini_thumbnail: video.mini_thumbnail,
-            live: video.live,
-            member: {
-              slug: member.slug,
-              name: member.name,
-              gen: member.gen,
-            },
-          }
-        })
-
-        return videos
+        file_data.map(
+          (video) =>
+            (video.from = config.members.find((m) => m.slug === video.from))
+        )
+        return file_data
       })
       .reduce((acc, cur) => [...acc, ...cur], [])
 
-    // sorting livers for latest video (lagest published)
-    livers.sort((a, b) => {
-      if (a.live?.start_time && b.live?.start_time) {
-        return b.live.start_time - a.live.start_time
-      } else if (a.live?.start_time) {
+    videos.sort((a, b) => {
+      if (a.live?.start_stream && b.live?.start_stream) {
+        return b.live.start_stream - a.live.start_stream
+      } else if (a.live?.start_stream) {
         return -1
-      } else if (b.live?.start_time) {
+      } else if (b.live?.start_stream) {
         return 1
       } else {
         return b.published - a.published
       }
     })
 
-    // limit livers to 20 video
-    livers.splice(25)
+    videos.splice(25)
 
-    res.status(200).json(livers)
+    res.status(200).json(videos)
   })
 
   app.get("/liver/:slug", (req, res) => {
-    const liver = path.join(__rootname, "liver", `${req.params.slug}.json`)
+    const member = path.join(__rootname, "members", `${req.params.slug}.json`)
     const config = JSON.parse(
       fs.readFileSync(path.join(__rootname, "config.json"))
     )
 
-    if (!fs.existsSync(liver)) {
+    if (!fs.existsSync(member)) {
       res.status(404).json({
         message: "Liver not found",
       })
       return
     }
 
-    const liver_profile = config.liver.find(
-      (liver) => liver.slug === req.params.slug
+    const member_profile = config.members.find(
+      (m) => m.slug === req.params.slug
     )
 
-    const videos = JSON.parse(fs.readFileSync(liver))
+    const videos = JSON.parse(fs.readFileSync(member)).map((v) => {
+      delete v.checked
+      delete v.from
+      return v
+    })
 
     res.status(200).json({
-      ...liver_profile,
+      ...member_profile,
       videos,
     })
   })
 
   app.listen(process.env.PORT, () => {
-    console.log(chalk.green("Server is running on port 3001"))
+    console.log(chalk.green(`Server is running on port ${process.env.PORT}`))
   })
 }
 
