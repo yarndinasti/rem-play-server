@@ -179,7 +179,6 @@ async function fetchVideo(video_id, slug) {
   if (!video) return null
 
   const published = new Date(video.snippet.publishedAt).getTime()
-  const live_status = video.liveBroadcastContent
   const duration = convertToSeconds(video.contentDetails.duration)
 
   const checked = new Date().getTime()
@@ -199,10 +198,9 @@ async function fetchVideo(video_id, slug) {
     title: video.snippet.title,
     published,
     from: slug,
-    live_status,
     duration,
     checked,
-    live_status: video.liveBroadcastContent,
+    live_status: video.snippet.liveBroadcastContent,
     thumbnail: {
       normal: `https://i.ytimg.com/vi/${video_id}/hqdefault.jpg`,
       mini: `https://i.ytimg.com/vi/${video_id}/default.jpg`,
