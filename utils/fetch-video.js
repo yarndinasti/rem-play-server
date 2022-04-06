@@ -180,9 +180,6 @@ async function fetchVideo(video_id, slug) {
 
   const published = new Date(video.snippet.publishedAt).getTime()
   const live_status = video.liveBroadcastContent
-  const start_stream = new Date(
-    video.liveStreamingDetails.scheduledStartTime
-  ).getTime()
   const duration = convertToSeconds(video.contentDetails.duration)
 
   const checked = new Date().getTime()
@@ -190,7 +187,9 @@ async function fetchVideo(video_id, slug) {
   const live = video.liveStreamingDetails
     ? {
         live: {
-          start_stream,
+          start_stream: new Date(
+            video.liveStreamingDetails.scheduledStartTime
+          ).getTime(),
         },
       }
     : {}
