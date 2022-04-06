@@ -179,9 +179,10 @@ async function fetchVideo(video_id, slug) {
   if (!video) return null
 
   const published = new Date(video.snippet.publishedAt).getTime()
-  const start_stream = video.liveStreamingDetails
-    ? new Date(video.liveStreamingDetails.scheduledStartTime).getTime()
-    : null
+  const live_status = video.liveBroadcastContent
+  const start_stream = new Date(
+    video.liveStreamingDetails.scheduledStartTime
+  ).getTime()
   const duration = convertToSeconds(video.contentDetails.duration)
 
   const checked = new Date().getTime()
@@ -199,6 +200,7 @@ async function fetchVideo(video_id, slug) {
     title: video.snippet.title,
     published,
     from: slug,
+    live_status,
     duration,
     checked,
     live_status: video.liveBroadcastContent,
