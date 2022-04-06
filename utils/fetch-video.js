@@ -171,7 +171,7 @@ async function fetchVideo(video_id, slug) {
       id: video_id,
       part: "statistics,snippet,liveStreamingDetails,contentDetails",
       fields:
-        "items(snippet(publishedAt,title,channelTitle,liveBroadcastContent),liveStreamingDetails(scheduledStartTime,concurrentViewers,actualEndTime),statistics(viewCount),contentDetails(duration))",
+        "items(snippet(publishedAt,title,channelTitle,liveBroadcastContent),liveStreamingDetails(scheduledStartTime,actualStartTime,actualEndTime),statistics(viewCount),contentDetails(duration))",
     })
     .then((data) => data.data.items[0])
     .catch((err) => null)
@@ -187,8 +187,13 @@ async function fetchVideo(video_id, slug) {
     ? {
         live: {
           start_stream: new Date(
-            video.liveStreamingDetails.scheduledStartTime
+            video.liveStreamingDetails.actualStartTime
+              ? video.liveStreamingDetails.actualStartTime
+              : video.liveStreamingDetails.scheduledStartTime
           ).getTime(),
+          end_stream: video.liveStreamingDetails.actualEndTime
+            ? new Date(video.liveStreamingDetails.actualEndTime).getTime()
+            : undefined,
         },
       }
     : {}
