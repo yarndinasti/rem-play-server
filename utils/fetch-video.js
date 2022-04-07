@@ -83,13 +83,16 @@ async function fetchVideoData(notif = false) {
 
     for (const video of new_videos) {
       const past_upcoming =
-        moment(video.live?.start_stream).isAfter(new Date().getTime()) &&
+        moment(video.live?.start_stream).isBefore(new Date().getTime()) &&
         video.live_status === "upcoming"
 
       const is_live = video.live_status === "live"
-      const checking = moment(video.checked).isAfter(new Date().getTime())
+      const checking = moment(video.checked + 1000 * 60 * 60 * 24).isBefore(
+        new Date().getTime()
+      )
 
       if (!past_upcoming && !is_live && !checking) continue
+      console.log(video.title)
       const video_data = await fetchVideo(video.id, member.slug)
 
       if (!video_data) new_videos = new_videos.filter((v) => v.id !== video.id)
@@ -108,7 +111,7 @@ async function fetchVideoData(notif = false) {
       }
 
       new_videos = new_videos.map((v) => {
-        if (v.id === video.id) {
+        if (v.id === video_data.id) {
           return video_data
         }
         return v
