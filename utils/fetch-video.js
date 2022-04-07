@@ -92,7 +92,6 @@ async function fetchVideoData(notif = false) {
       )
 
       if (!past_upcoming && !is_live && !checking) continue
-      console.log(video.title)
       const video_data = await fetchVideo(video.id, member.slug)
 
       if (!video_data) new_videos = new_videos.filter((v) => v.id !== video.id)
