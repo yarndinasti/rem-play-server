@@ -123,7 +123,7 @@ async function fetchVideoData(notif = false) {
 
       switch (video_data.live_status) {
         case "upcoming":
-          const time_remain = moment(video_data.live.start_time).fromNow()
+          const time_remain = moment(video_data.live.start_time).toNow()
           console.log(
             chalk.blue.inverse.bold(` 🎬 Staring in ${time_remain} `) +
               video_data.title
