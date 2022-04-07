@@ -58,6 +58,14 @@ const server = () => {
       }
     })
 
+    // sort video when a.live_status == "live"
+    videos.sort((a, b) => {
+      if (a.live_status === "live" && b.live_status !== "live") return -1
+      else if (a.live_status !== "live" && b.live_status === "live") return 1
+
+      return 0
+    })
+
     videos.splice(25)
 
     const slideshow = config.members
